@@ -69,3 +69,4 @@ The prediction page also displays the model confidence and selected model name.
 ## Documentation
 
 - [Tools and Technologies Used](docs/tools-and-technologies.md)
+- [Project Workflow](docs/project-workflow.md)
