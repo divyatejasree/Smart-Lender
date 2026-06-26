@@ -61,3 +61,7 @@ The final web output is an approval decision:
 - `Loan Rejected`
 
 The prediction page also displays the model confidence and selected model name.
+
+## Entity Relationship Diagram
+
+![Smart Lender ER Diagram](docs/er-diagram.svg)
