@@ -65,3 +65,7 @@ The prediction page also displays the model confidence and selected model name.
 ## Entity Relationship Diagram
 
 ![Smart Lender ER Diagram](docs/er-diagram.svg)
+
+## Documentation
+
+- [Tools and Technologies Used](docs/tools-and-technologies.md)
