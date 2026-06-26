@@ -1,0 +1,279 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+
+try:
+    from xgboost import XGBClassifier
+except ImportError:
+    XGBClassifier = None
+
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+MODEL_DIR = BASE_DIR / "models"
+DATA_PATH = DATA_DIR / "loan_prediction.csv"
+MODEL_PATH = MODEL_DIR / "smart_lender_model.joblib"
+METRICS_PATH = MODEL_DIR / "metrics.json"
+
+CATEGORICAL_COLUMNS = [
+    "Gender",
+    "Married",
+    "Dependents",
+    "Education",
+    "Self_Employed",
+    "Property_Area",
+]
+
+NUMERIC_COLUMNS = [
+    "ApplicantIncome",
+    "CoapplicantIncome",
+    "LoanAmount",
+    "Loan_Amount_Term",
+    "Credit_History",
+]
+
+TARGET_COLUMN = "Loan_Status"
+
+
+def generate_sample_dataset(rows: int = 900, seed: int = 42) -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
+
+    gender = rng.choice(["Male", "Female"], rows, p=[0.78, 0.22])
+    married = rng.choice(["Yes", "No"], rows, p=[0.65, 0.35])
+    dependents = rng.choice(["0", "1", "2", "3+"], rows, p=[0.55, 0.18, 0.17, 0.10])
+    education = rng.choice(["Graduate", "Not Graduate"], rows, p=[0.78, 0.22])
+    self_employed = rng.choice(["No", "Yes"], rows, p=[0.86, 0.14])
+    property_area = rng.choice(["Urban", "Semiurban", "Rural"], rows, p=[0.36, 0.39, 0.25])
+    credit_history = rng.choice([1.0, 0.0], rows, p=[0.83, 0.17])
+
+    applicant_income = rng.lognormal(mean=8.45, sigma=0.48, size=rows).round().astype(int)
+    coapplicant_income = rng.choice([0, 1], rows, p=[0.42, 0.58]) * rng.lognormal(
+        mean=7.45, sigma=0.65, size=rows
+    ).round().astype(int)
+    loan_amount = rng.normal(loc=145, scale=42, size=rows).clip(35, 360).round().astype(int)
+    loan_term = rng.choice([120, 180, 240, 300, 360, 480], rows, p=[0.04, 0.07, 0.08, 0.11, 0.66, 0.04])
+
+    total_income = applicant_income + coapplicant_income
+    monthly_debt = loan_amount * 1000 / loan_term
+    disposable_ratio = total_income / np.maximum(monthly_debt, 1)
+
+    score = (
+        1.9 * credit_history
+        + 0.45 * (education == "Graduate")
+        + 0.35 * (property_area == "Semiurban")
+        + 0.18 * (property_area == "Urban")
+        + 0.30 * (married == "Yes")
+        - 0.50 * (self_employed == "Yes")
+        + 0.22 * np.log1p(disposable_ratio)
+        - 0.32 * (loan_amount > 210)
+        - 0.22 * (dependents == "3+")
+        + rng.normal(0, 0.55, rows)
+    )
+
+    threshold = np.quantile(score, 0.35)
+    loan_status = np.where(score >= threshold, "Y", "N")
+
+    return pd.DataFrame(
+        {
+            "Gender": gender,
+            "Married": married,
+            "Dependents": dependents,
+            "Education": education,
+            "Self_Employed": self_employed,
+            "ApplicantIncome": applicant_income,
+            "CoapplicantIncome": coapplicant_income,
+            "LoanAmount": loan_amount,
+            "Loan_Amount_Term": loan_term,
+            "Credit_History": credit_history,
+            "Property_Area": property_area,
+            "Loan_Status": loan_status,
+        }
+    )
+
+
+def load_dataset() -> pd.DataFrame:
+    DATA_DIR.mkdir(exist_ok=True)
+    if DATA_PATH.exists():
+        return pd.read_csv(DATA_PATH)
+
+    df = generate_sample_dataset()
+    df.to_csv(DATA_PATH, index=False)
+    return df
+
+
+def build_preprocessor() -> ColumnTransformer:
+    numeric_pipeline = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+        ]
+    )
+    categorical_pipeline = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("encoder", OneHotEncoder(handle_unknown="ignore")),
+        ]
+    )
+    return ColumnTransformer(
+        transformers=[
+            ("num", numeric_pipeline, NUMERIC_COLUMNS),
+            ("cat", categorical_pipeline, CATEGORICAL_COLUMNS),
+        ]
+    )
+
+
+def get_models() -> dict[str, object]:
+    models: dict[str, object] = {
+        "Decision Tree": DecisionTreeClassifier(max_depth=6, random_state=42),
+        "Random Forest": RandomForestClassifier(
+            n_estimators=220,
+            max_depth=9,
+            min_samples_leaf=4,
+            random_state=42,
+            n_jobs=1,
+        ),
+        "KNN": KNeighborsClassifier(n_neighbors=9),
+    }
+
+    if XGBClassifier is not None:
+        models["XGBoost"] = XGBClassifier(
+            n_estimators=160,
+            max_depth=4,
+            learning_rate=0.06,
+            subsample=0.9,
+            colsample_bytree=0.9,
+            eval_metric="logloss",
+            random_state=42,
+        )
+    else:
+        models["Gradient Boosting Fallback"] = GradientBoostingClassifier(
+            n_estimators=180,
+            learning_rate=0.06,
+            max_depth=3,
+            random_state=42,
+        )
+
+    return models
+
+
+def validate_dataset(df: pd.DataFrame) -> None:
+    missing = set(CATEGORICAL_COLUMNS + NUMERIC_COLUMNS + [TARGET_COLUMN]) - set(df.columns)
+    if missing:
+        missing_text = ", ".join(sorted(missing))
+        raise ValueError(f"Dataset is missing required columns: {missing_text}")
+
+
+def train() -> dict[str, object]:
+    df = load_dataset()
+    validate_dataset(df)
+
+    x = df[CATEGORICAL_COLUMNS + NUMERIC_COLUMNS]
+    y = df[TARGET_COLUMN].map({"N": 0, "Y": 1})
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        x,
+        y,
+        test_size=0.2,
+        stratify=y,
+        random_state=42,
+    )
+
+    results = []
+    best_pipeline = None
+    best_name = ""
+    best_test_accuracy = -1.0
+    preferred_order = {
+        "Decision Tree": 1,
+        "Random Forest": 2,
+        "KNN": 3,
+        "Gradient Boosting Fallback": 4,
+        "XGBoost": 5,
+    }
+
+    for name, model in get_models().items():
+        pipeline = Pipeline(
+            steps=[
+                ("preprocessor", build_preprocessor()),
+                ("classifier", model),
+            ]
+        )
+        pipeline.fit(x_train, y_train)
+
+        train_predictions = pipeline.predict(x_train)
+        test_predictions = pipeline.predict(x_test)
+        train_accuracy = accuracy_score(y_train, train_predictions)
+        test_accuracy = accuracy_score(y_test, test_predictions)
+
+        results.append(
+            {
+                "model": name,
+                "training_accuracy": round(float(train_accuracy), 4),
+                "testing_accuracy": round(float(test_accuracy), 4),
+            }
+        )
+
+        is_better_score = test_accuracy > best_test_accuracy
+        is_preferred_tie = (
+            test_accuracy == best_test_accuracy
+            and preferred_order.get(name, 0) > preferred_order.get(best_name, 0)
+        )
+        if is_better_score or is_preferred_tie:
+            best_test_accuracy = test_accuracy
+            best_name = name
+            best_pipeline = pipeline
+
+    if best_pipeline is None:
+        raise RuntimeError("No model was trained.")
+
+    MODEL_DIR.mkdir(exist_ok=True)
+    model_package = {
+        "model_name": best_name,
+        "pipeline": best_pipeline,
+        "categorical_columns": CATEGORICAL_COLUMNS,
+        "numeric_columns": NUMERIC_COLUMNS,
+    }
+    joblib.dump(model_package, MODEL_PATH)
+
+    report_predictions = best_pipeline.predict(x_test)
+    metrics = {
+        "best_model": best_name,
+        "model_path": str(MODEL_PATH),
+        "dataset_path": str(DATA_PATH),
+        "results": results,
+        "classification_report": classification_report(
+            y_test,
+            report_predictions,
+            target_names=["Rejected", "Approved"],
+            output_dict=True,
+        ),
+    }
+    METRICS_PATH.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+    return metrics
+
+
+if __name__ == "__main__":
+    training_metrics = train()
+    print("Smart Lender model training complete")
+    print(f"Dataset: {training_metrics['dataset_path']}")
+    print(f"Saved model: {training_metrics['model_path']}")
+    print()
+    for row in training_metrics["results"]:
+        training = row["training_accuracy"] * 100
+        testing = row["testing_accuracy"] * 100
+        print(f"{row['model']}: training={training:.2f}% testing={testing:.2f}%")
+    print()
+    print(f"Best model: {training_metrics['best_model']}")
