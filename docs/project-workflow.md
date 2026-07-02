@@ -70,14 +70,14 @@ Examples:
 
 ### Story 3: Bivariate Analysis
 
-Bivariate analysis is used to compare two variables and identify relationships.
+Bivariate analysis is used to compare two variables and identify relationships. Count plots are useful for examining how categorical variable pairs differ across applicant groups.
 
 Examples:
 
-- Credit history vs loan status
-- Education vs loan status
-- Applicant income vs loan amount
-- Property area vs loan approval
+- Gender vs married status: segmenting the gender column against the married column reveals patterns in loan applications based on demographic combinations.
+- Education vs self-employment status: shows the tendency for educated applicants to be employed.
+- Property area vs loan amount term: reveals that loan amount term distributions vary based on the applicant’s property area.
+- Credit history vs loan status: helps identify how past credit behavior relates to loan approval.
 
 ### Story 4: Multivariate Analysis
 

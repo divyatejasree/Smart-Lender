@@ -100,6 +100,7 @@ Interpretation tips:
 - A right-skewed or long-tailed shape often suggests the feature may benefit from transformation.
 - Count plots help reveal class balance or dominant categories in categorical features.
 - These plots are useful for spotting unusual values or imbalance before preprocessing and model training.
+- Bivariate count plots compare pairs like gender vs married status, education vs self-employment, and property area vs loan term to reveal demographic and geographic trends in loan applications.
 
 ## Final Output
 
