@@ -81,7 +81,7 @@ Examples:
 
 ### Story 4: Multivariate Analysis
 
-Multivariate analysis is used to study relationships among multiple variables together.
+Multivariate analysis is used to study relationships among multiple variables together. This project uses the seaborn `swarmplot` function to compare features like property area, education, and loan amount term in a single visualization.
 
 Examples:
 

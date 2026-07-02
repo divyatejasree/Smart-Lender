@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from data.univariate_analysis import plot_univariate_analysis
+from data.univariate_analysis import plot_univariate_analysis, plot_multivariate_analysis
 
 
 class UnivariateAnalysisTests(unittest.TestCase):
@@ -28,6 +28,24 @@ class UnivariateAnalysisTests(unittest.TestCase):
             self.assertEqual(
                 outputs["summary"]["continuous_columns"],
                 ["ApplicantIncome", "CoapplicantIncome", "Credit_History"],
+            )
+
+    def test_plot_multivariate_analysis_creates_output_file(self) -> None:
+        df = pd.DataFrame(
+            {
+                "Property_Area": ["Urban", "Rural", "Semiurban", "Urban", "Rural"],
+                "Education": ["Graduate", "Not Graduate", "Graduate", "Graduate", "Not Graduate"],
+                "Loan_Amount_Term": [360, 360, 180, 360, 180],
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            outputs = plot_multivariate_analysis(df, output_dir=Path(tmp_dir))
+
+            self.assertTrue(outputs["multivariate_plot"].exists())
+            self.assertEqual(
+                outputs["summary"]["required_columns"],
+                ["Property_Area", "Education", "Loan_Amount_Term"],
             )
 
 

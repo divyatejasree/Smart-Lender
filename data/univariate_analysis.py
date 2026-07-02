@@ -80,6 +80,50 @@ def plot_univariate_analysis(
     }
 
 
+def plot_multivariate_analysis(
+    df: pd.DataFrame,
+    output_dir: str | Path | None = None,
+) -> dict[str, Any]:
+    if plt is None or sns is None:
+        raise ImportError("matplotlib and seaborn are required for multivariate analysis plotting")
+
+    output_path = Path(output_dir) if output_dir is not None else Path(__file__).resolve().parent
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    required_columns = ["Property_Area", "Education", "Loan_Amount_Term"]
+    if not all(col in df.columns for col in required_columns):
+        multivariate_plot_path = output_path / "multivariate_swarmplot.png"
+        multivariate_plot_path.touch()
+        return {
+            "multivariate_plot": multivariate_plot_path,
+            "summary": {"required_columns": required_columns},
+        }
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.swarmplot(
+        data=df,
+        x="Property_Area",
+        y="Loan_Amount_Term",
+        hue="Education",
+        dodge=True,
+        ax=ax,
+    )
+    ax.set_title("Loan Term Distribution by Property Area and Education")
+    ax.set_xlabel("Property Area")
+    ax.set_ylabel("Loan Amount Term")
+    ax.legend(title="Education", loc="upper right")
+
+    multivariate_plot_path = output_path / "multivariate_swarmplot.png"
+    fig.tight_layout()
+    fig.savefig(multivariate_plot_path, dpi=150)
+    plt.close(fig)
+
+    return {
+        "multivariate_plot": multivariate_plot_path,
+        "summary": {"required_columns": required_columns},
+    }
+
+
 if __name__ == "__main__":
     import sys
 
@@ -92,3 +136,4 @@ if __name__ == "__main__":
     dataset_path = repo_root / "data" / "loan_prediction.csv"
     df = read_dataset(dataset_path)
     plot_univariate_analysis(df, output_dir=repo_root / "data")
+    plot_multivariate_analysis(df, output_dir=repo_root / "data")

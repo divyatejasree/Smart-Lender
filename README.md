@@ -94,6 +94,7 @@ This script generates two plots in the data folder:
 
 - `data/univariate_continuous.png` for continuous variables such as applicant income and credit history
 - `data/univariate_categorical.png` for categorical variables such as gender, education, and property area
+- `data/multivariate_swarmplot.png` for multivariate relationships using seaborn swarmplot
 
 Interpretation tips:
 
