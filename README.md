@@ -53,6 +53,54 @@ The app expects these applicant fields:
 
 `Loan_Status` should contain `Y` for approved applicants and `N` for rejected applicants.
 
+## Load the Dataset
+
+This project uses `pandas` to read the dataset and `matplotlib` with the `fivethirtyeight` style for consistent plots.
+
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+plt.style.use("fivethirtyeight")
+
+data_path = Path("data/loan_prediction.csv")
+
+if data_path.suffix == ".csv":
+    df = pd.read_csv(data_path)
+elif data_path.suffix in {".xlsx", ".xls"}:
+    df = pd.read_excel(data_path)
+elif data_path.suffix == ".json":
+    df = pd.read_json(data_path)
+else:
+    df = pd.read_table(data_path)
+
+print(df.shape)
+print(df.head())
+print(df.columns.tolist())
+```
+
+Use `pd.read_csv()` when the dataset is stored as a CSV file, as in this repository.
+
+## Univariate Analysis
+
+To explore the distribution of individual features before modeling, run:
+
+```bash
+python data/univariate_analysis.py
+```
+
+This script generates two plots in the data folder:
+
+- `data/univariate_continuous.png` for continuous variables such as applicant income and credit history
+- `data/univariate_categorical.png` for categorical variables such as gender, education, and property area
+
+Interpretation tips:
+
+- A right-skewed or long-tailed shape often suggests the feature may benefit from transformation.
+- Count plots help reveal class balance or dominant categories in categorical features.
+- These plots are useful for spotting unusual values or imbalance before preprocessing and model training.
+
 ## Final Output
 
 The final web output is an approval decision:

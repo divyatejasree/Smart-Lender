@@ -7,6 +7,11 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:  # pragma: no cover - optional dependency in some environments
+    plt = None
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, classification_report
@@ -47,6 +52,23 @@ NUMERIC_COLUMNS = [
 ]
 
 TARGET_COLUMN = "Loan_Status"
+
+if plt is not None:
+    plt.style.use("fivethirtyeight")
+
+
+def read_dataset(data_path: str | Path | None = None) -> pd.DataFrame:
+    path = Path(data_path) if data_path is not None else DATA_PATH
+    if not path.exists():
+        raise FileNotFoundError(f"Dataset not found at {path}")
+
+    if path.suffix.lower() == ".csv":
+        return pd.read_csv(path)
+    if path.suffix.lower() in {".xlsx", ".xls"}:
+        return pd.read_excel(path)
+    if path.suffix.lower() == ".json":
+        return pd.read_json(path)
+    return pd.read_table(path)
 
 
 def generate_sample_dataset(rows: int = 900, seed: int = 42) -> pd.DataFrame:
@@ -108,11 +130,11 @@ def generate_sample_dataset(rows: int = 900, seed: int = 42) -> pd.DataFrame:
 def load_dataset() -> pd.DataFrame:
     DATA_DIR.mkdir(exist_ok=True)
     if DATA_PATH.exists():
-        return pd.read_csv(DATA_PATH)
+        return read_dataset(DATA_PATH)
 
     df = generate_sample_dataset()
     df.to_csv(DATA_PATH, index=False)
-    return df
+    return read_dataset(DATA_PATH)
 
 
 def build_preprocessor() -> ColumnTransformer:
