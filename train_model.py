@@ -229,6 +229,41 @@ def decisionTree(
     }
 
 
+def randomForest(
+    x_train: pd.DataFrame,
+    x_test: pd.DataFrame,
+    y_train: pd.Series,
+    y_test: pd.Series,
+) -> dict[str, object]:
+    """Train and evaluate a random forest classifier on the provided split data."""
+    model = RandomForestClassifier(
+        n_estimators=220,
+        max_depth=9,
+        min_samples_leaf=4,
+        random_state=42,
+        n_jobs=1,
+    )
+    pipeline = build_training_pipeline(model)
+    pipeline.fit(x_train, y_train)
+
+    predictions = pipeline.predict(x_test)
+    report = classification_report(
+        y_test,
+        predictions,
+        target_names=["Rejected", "Approved"],
+        output_dict=True,
+    )
+    matrix = confusion_matrix(y_test, predictions)
+
+    return {
+        "model": "Random Forest",
+        "pipeline": pipeline,
+        "predictions": predictions,
+        "confusion_matrix": matrix.tolist(),
+        "classification_report": report,
+    }
+
+
 def get_models() -> dict[str, object]:
     models: dict[str, object] = {
         "Decision Tree": DecisionTreeClassifier(max_depth=6, random_state=42),

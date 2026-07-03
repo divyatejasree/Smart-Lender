@@ -115,6 +115,53 @@ class TrainModelTests(unittest.TestCase):
         self.assertEqual(len(result["confusion_matrix"],), 2)
         self.assertIn("Approved", result["classification_report"])
 
+    def test_random_forest_trains_and_evaluates(self) -> None:
+        from train_model import randomForest
+
+        data = {
+            "Gender": ["Male", "Female", "Male", "Female"],
+            "Married": ["Yes", "No", "Yes", "No"],
+            "Dependents": ["0", "1", "0", "1"],
+            "Education": ["Graduate", "Not Graduate", "Graduate", "Not Graduate"],
+            "Self_Employed": ["No", "Yes", "No", "Yes"],
+            "ApplicantIncome": [5000, 3000, 6000, 2500],
+            "CoapplicantIncome": [0, 1500, 500, 1000],
+            "LoanAmount": [100, 120, 130, 110],
+            "Loan_Amount_Term": [360, 360, 360, 360],
+            "Credit_History": [1.0, 0.0, 1.0, 0.0],
+            "Property_Area": ["Urban", "Rural", "Semiurban", "Urban"],
+            "Loan_Status": ["Y", "N", "Y", "N"],
+        }
+        df = pd.DataFrame(data)
+        x = df[[
+            "Gender",
+            "Married",
+            "Dependents",
+            "Education",
+            "Self_Employed",
+            "ApplicantIncome",
+            "CoapplicantIncome",
+            "LoanAmount",
+            "Loan_Amount_Term",
+            "Credit_History",
+            "Property_Area",
+        ]]
+        y = df["Loan_Status"].map({"N": 0, "Y": 1})
+
+        x_train = x.iloc[:2]
+        x_test = x.iloc[2:]
+        y_train = y.iloc[:2]
+        y_test = y.iloc[2:]
+
+        result = randomForest(x_train, x_test, y_train, y_test)
+
+        self.assertEqual(result["model"], "Random Forest")
+        self.assertIn("confusion_matrix", result)
+        self.assertIn("classification_report", result)
+        self.assertEqual(len(result["predictions"]), len(x_test))
+        self.assertEqual(len(result["confusion_matrix"],), 2)
+        self.assertIn("Approved", result["classification_report"])
+
 
 if __name__ == "__main__":
     unittest.main()
