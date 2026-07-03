@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import pickle
 from pathlib import Path
 
 import joblib
@@ -18,7 +19,7 @@ from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline as SklearnPipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -35,6 +36,7 @@ DATA_DIR = BASE_DIR / "data"
 MODEL_DIR = BASE_DIR / "models"
 DATA_PATH = DATA_DIR / "loan_prediction.csv"
 MODEL_PATH = MODEL_DIR / "smart_lender_model.joblib"
+MODEL_PKL_PATH = MODEL_DIR / "smart_lender_model.pkl"
 METRICS_PATH = MODEL_DIR / "metrics.json"
 
 CATEGORICAL_COLUMNS = [
@@ -264,6 +266,40 @@ def randomForest(
     }
 
 
+def xgboost(
+    x_train: pd.DataFrame,
+    x_test: pd.DataFrame,
+    y_train: pd.Series,
+    y_test: pd.Series,
+) -> dict[str, object]:
+    """Train and evaluate a gradient boosting classifier on the provided split data."""
+    model = GradientBoostingClassifier(
+        n_estimators=180,
+        learning_rate=0.06,
+        max_depth=3,
+        random_state=42,
+    )
+    pipeline = build_training_pipeline(model)
+    pipeline.fit(x_train, y_train)
+
+    predictions = pipeline.predict(x_test)
+    report = classification_report(
+        y_test,
+        predictions,
+        target_names=["Rejected", "Approved"],
+        output_dict=True,
+    )
+    matrix = confusion_matrix(y_test, predictions)
+
+    return {
+        "model": "XGBoost",
+        "pipeline": pipeline,
+        "predictions": predictions,
+        "confusion_matrix": matrix.tolist(),
+        "classification_report": report,
+    }
+
+
 def get_models() -> dict[str, object]:
     models: dict[str, object] = {
         "Decision Tree": DecisionTreeClassifier(max_depth=6, random_state=42),
@@ -326,6 +362,8 @@ def train() -> dict[str, object]:
     best_pipeline = None
     best_name = ""
     best_test_accuracy = -1.0
+    best_cv_mean = 0.0
+    best_cv_std = 0.0
     preferred_order = {
         "Decision Tree": 1,
         "Random Forest": 2,
@@ -337,16 +375,28 @@ def train() -> dict[str, object]:
 
     for name, model in get_models().items():
         pipeline = build_training_pipeline(model)
+        cv_scores = cross_val_score(
+            pipeline,
+            x,
+            y,
+            cv=5,
+            scoring="accuracy",
+            n_jobs=-1,
+        )
         pipeline.fit(x_train, y_train)
 
         train_predictions = pipeline.predict(x_train)
         test_predictions = pipeline.predict(x_test)
         train_accuracy = accuracy_score(y_train, train_predictions)
         test_accuracy = accuracy_score(y_test, test_predictions)
+        cv_mean = float(cv_scores.mean())
+        cv_std = float(cv_scores.std())
 
         results.append(
             {
                 "model": name,
+                "cross_validation_mean_accuracy": round(cv_mean, 4),
+                "cross_validation_std_accuracy": round(cv_std, 4),
                 "training_accuracy": round(float(train_accuracy), 4),
                 "testing_accuracy": round(float(test_accuracy), 4),
             }
@@ -361,6 +411,8 @@ def train() -> dict[str, object]:
             best_test_accuracy = test_accuracy
             best_name = name
             best_pipeline = pipeline
+            best_cv_mean = cv_mean
+            best_cv_std = cv_std
 
     if best_pipeline is None:
         raise RuntimeError("No model was trained.")
@@ -372,13 +424,19 @@ def train() -> dict[str, object]:
         "categorical_columns": CATEGORICAL_COLUMNS,
         "numeric_columns": NUMERIC_COLUMNS,
     }
+    MODEL_DIR.mkdir(exist_ok=True)
     joblib.dump(model_package, MODEL_PATH)
+    with open(MODEL_PKL_PATH, "wb") as pkl_file:
+        pickle.dump(model_package, pkl_file)
 
     report_predictions = best_pipeline.predict(x_test)
     metrics = {
         "best_model": best_name,
         "model_path": str(MODEL_PATH),
+        "pickle_model_path": str(MODEL_PKL_PATH),
         "dataset_path": str(DATA_PATH),
+        "cross_validation_mean_accuracy": round(best_cv_mean, 4),
+        "cross_validation_std_accuracy": round(best_cv_std, 4),
         "results": results,
         "classification_report": classification_report(
             y_test,
