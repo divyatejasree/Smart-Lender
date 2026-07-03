@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover - optional dependency in some environmen
     plt = None
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -153,6 +154,8 @@ def build_preprocessor() -> ColumnTransformer:
 
     Numeric features use mean imputation followed by standard scaling.
     Categorical features use mode imputation followed by one-hot encoding.
+    Scaling is applied only to the input features (X); the target variable (y)
+    is not transformed.
     """
     numeric_pipeline = SklearnPipeline(
         steps=[
@@ -172,6 +175,19 @@ def build_preprocessor() -> ColumnTransformer:
             ("cat", categorical_pipeline, CATEGORICAL_COLUMNS),
         ]
     )
+
+
+def preprocess_features(x: pd.DataFrame) -> pd.DataFrame:
+    """Transform input features using the preprocessing pipeline.
+
+    Numeric features are imputed and scaled, and categorical features are
+    imputed and one-hot encoded. The returned DataFrame contains the transformed
+    feature names.
+    """
+    preprocessor = build_preprocessor()
+    transformed = preprocessor.fit_transform(x)
+    feature_names = preprocessor.get_feature_names_out()
+    return pd.DataFrame(transformed, columns=feature_names, index=x.index)
 
 
 def build_training_pipeline(model: object) -> ImbPipeline:
@@ -215,6 +231,7 @@ def get_models() -> dict[str, object]:
             random_state=42,
         )
 
+    models["Logistic Regression"] = LogisticRegression(max_iter=500, random_state=42)
     return models
 
 
@@ -249,8 +266,9 @@ def train() -> dict[str, object]:
         "Decision Tree": 1,
         "Random Forest": 2,
         "KNN": 3,
-        "Gradient Boosting Fallback": 4,
-        "XGBoost": 5,
+        "Logistic Regression": 4,
+        "Gradient Boosting Fallback": 5,
+        "XGBoost": 6,
     }
 
     for name, model in get_models().items():

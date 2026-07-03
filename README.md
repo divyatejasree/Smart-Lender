@@ -1,6 +1,6 @@
 # Smart Lender
 
-Smart Lender is a Flask web application that predicts whether a loan applicant is likely to be approved. It trains and compares Decision Tree, Random Forest, K-Nearest Neighbors, and XGBoost classifiers, then saves the best-performing model for real-time prediction.
+Smart Lender is a Flask web application that predicts whether a loan applicant is likely to be approved. It trains and compares Decision Tree, Random Forest, K-Nearest Neighbors, Logistic Regression, and XGBoost classifiers, then saves the best-performing model for real-time prediction.
 
 If `data/loan_prediction.csv` is not available, the training script creates a realistic sample dataset so the project can run immediately.
 
@@ -59,6 +59,8 @@ Before training, the dataset is preprocessed as follows:
 
 - Missing numeric values are replaced with the column mean
 - Missing categorical values are replaced with the most frequent value (mode)
+- Numerical features are scaled using standard scaling to normalize input ranges
+- Scaling is applied only to the input features (X), not to the target variable (`Loan_Status`)
 - Categorical columns are encoded using one-hot encoding so the model can train on numeric inputs
 
 ## Load the Dataset

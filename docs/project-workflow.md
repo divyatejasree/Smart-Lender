@@ -108,7 +108,10 @@ The target column `Loan_Status` is checked to ensure that approved and rejected 
 
 ### Story 3: Scale And Normalize Features
 
-Numerical features such as applicant income, coapplicant income, loan amount, and loan term are scaled using standard scaling. This improves model performance, especially for KNN.
+Numerical features such as applicant income, coapplicant income, loan amount, and loan term are scaled using standard scaling. This improves model performance, especially for KNN and other distance-based models.
+
+- Scaling is applied only to the input features (X), not to the target variable `Loan_Status`.
+- The preprocessing pipeline transforms `X` into a numeric array before training, while `y` remains unchanged.
 
 ### Story 4: Split Dataset
 
