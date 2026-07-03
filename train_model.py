@@ -17,7 +17,7 @@ except ImportError:  # pragma: no cover - optional dependency in some environmen
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline as SklearnPipeline
@@ -198,6 +198,35 @@ def build_training_pipeline(model: object) -> ImbPipeline:
             ("classifier", model),
         ]
     )
+
+
+def decisionTree(
+    x_train: pd.DataFrame,
+    x_test: pd.DataFrame,
+    y_train: pd.Series,
+    y_test: pd.Series,
+) -> dict[str, object]:
+    """Train and evaluate a decision tree classifier on the provided split data."""
+    model = DecisionTreeClassifier(max_depth=6, random_state=42)
+    pipeline = build_training_pipeline(model)
+    pipeline.fit(x_train, y_train)
+
+    predictions = pipeline.predict(x_test)
+    report = classification_report(
+        y_test,
+        predictions,
+        target_names=["Rejected", "Approved"],
+        output_dict=True,
+    )
+    matrix = confusion_matrix(y_test, predictions)
+
+    return {
+        "model": "Decision Tree",
+        "pipeline": pipeline,
+        "predictions": predictions,
+        "confusion_matrix": matrix.tolist(),
+        "classification_report": report,
+    }
 
 
 def get_models() -> dict[str, object]:
