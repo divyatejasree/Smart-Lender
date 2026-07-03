@@ -115,7 +115,16 @@ Numerical features such as applicant income, coapplicant income, loan amount, an
 
 ### Story 4: Split Dataset
 
-The dataset is split into training and testing sets.
+The dataset is split into input features (`X`) and the target variable (`y`) before training.
+
+- `X` contains all feature columns except the target column `Loan_Status`
+- `y` contains only the target values for loan approval status
+
+The `train_test_split()` call uses:
+
+- `test_size=0.2` to reserve 20% of the dataset for testing
+- `random_state=42` for reproducible splits
+- `stratify=y` to preserve the class balance in both train and test sets
 
 ```python
 from sklearn.model_selection import train_test_split
@@ -124,6 +133,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
     test_size=0.2,
+    stratify=y,
     random_state=42
 )
 ```

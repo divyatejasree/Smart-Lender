@@ -63,6 +63,16 @@ Before training, the dataset is preprocessed as follows:
 - Scaling is applied only to the input features (X), not to the target variable (`Loan_Status`)
 - Categorical columns are encoded using one-hot encoding so the model can train on numeric inputs
 
+## Train/Test Split
+
+The dataset is split into input features (`X`) and the target variable (`y`) before training. `X` contains all columns except the target variable, while `y` contains only `Loan_Status`.
+
+The split uses `sklearn.model_selection.train_test_split()` with:
+
+- `test_size=0.2`: Reserve 20% of the dataset for testing
+- `random_state=42`: Seed for reproducible train/test splits
+- `stratify=y`: Preserve the target class distribution between train and test sets
+
 ## Load the Dataset
 
 This project uses `pandas` to read the dataset and `matplotlib` with the `fivethirtyeight` style for consistent plots.
