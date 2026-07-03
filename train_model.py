@@ -6,6 +6,8 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.compose import ColumnTransformer
 
 try:
@@ -17,7 +19,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline as SklearnPipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
@@ -152,13 +154,13 @@ def build_preprocessor() -> ColumnTransformer:
     Numeric features use mean imputation followed by standard scaling.
     Categorical features use mode imputation followed by one-hot encoding.
     """
-    numeric_pipeline = Pipeline(
+    numeric_pipeline = SklearnPipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="mean")),
             ("scaler", StandardScaler()),
         ]
     )
-    categorical_pipeline = Pipeline(
+    categorical_pipeline = SklearnPipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="most_frequent")),
             ("encoder", OneHotEncoder(handle_unknown="ignore")),
@@ -168,6 +170,16 @@ def build_preprocessor() -> ColumnTransformer:
         transformers=[
             ("num", numeric_pipeline, NUMERIC_COLUMNS),
             ("cat", categorical_pipeline, CATEGORICAL_COLUMNS),
+        ]
+    )
+
+
+def build_training_pipeline(model: object) -> ImbPipeline:
+    return ImbPipeline(
+        steps=[
+            ("preprocessor", build_preprocessor()),
+            ("smote", SMOTE(random_state=42)),
+            ("classifier", model),
         ]
     )
 
@@ -242,12 +254,7 @@ def train() -> dict[str, object]:
     }
 
     for name, model in get_models().items():
-        pipeline = Pipeline(
-            steps=[
-                ("preprocessor", build_preprocessor()),
-                ("classifier", model),
-            ]
-        )
+        pipeline = build_training_pipeline(model)
         pipeline.fit(x_train, y_train)
 
         train_predictions = pipeline.predict(x_train)

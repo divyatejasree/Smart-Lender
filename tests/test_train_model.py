@@ -27,6 +27,14 @@ class TrainModelTests(unittest.TestCase):
         self.assertEqual(numeric_imputer.strategy, "mean")
         self.assertEqual(categorical_imputer.strategy, "most_frequent")
 
+    def test_training_pipeline_applies_smote(self) -> None:
+        from train_model import SMOTE, build_training_pipeline
+        from sklearn.tree import DecisionTreeClassifier
+
+        pipeline = build_training_pipeline(DecisionTreeClassifier())
+        self.assertIn("smote", pipeline.named_steps)
+        self.assertIsInstance(pipeline.named_steps["smote"], SMOTE)
+
 
 if __name__ == "__main__":
     unittest.main()
