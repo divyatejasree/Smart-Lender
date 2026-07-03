@@ -137,10 +137,24 @@ def load_dataset() -> pd.DataFrame:
     return read_dataset(DATA_PATH)
 
 
+def inspect_dataset(df: pd.DataFrame) -> None:
+    """Print dataset shape, info, and missing-value counts."""
+    print(f"Dataset shape: {df.shape}")
+    print("\nDataset information:")
+    df.info()
+    print("\nMissing values per column:")
+    print(df.isnull().sum())
+
+
 def build_preprocessor() -> ColumnTransformer:
+    """Build the feature preprocessing pipeline.
+
+    Numeric features use mean imputation followed by standard scaling.
+    Categorical features use mode imputation followed by one-hot encoding.
+    """
     numeric_pipeline = Pipeline(
         steps=[
-            ("imputer", SimpleImputer(strategy="median")),
+            ("imputer", SimpleImputer(strategy="mean")),
             ("scaler", StandardScaler()),
         ]
     )
@@ -202,6 +216,7 @@ def validate_dataset(df: pd.DataFrame) -> None:
 def train() -> dict[str, object]:
     df = load_dataset()
     validate_dataset(df)
+    inspect_dataset(df)
 
     x = df[CATEGORICAL_COLUMNS + NUMERIC_COLUMNS]
     y = df[TARGET_COLUMN].map({"N": 0, "Y": 1})

@@ -99,8 +99,8 @@ Steps:
 
 - Check missing values
 - Remove duplicate rows
-- Fill missing numerical values using median
-- Fill missing categorical values using most frequent value
+- Fill missing numerical values using mean
+- Fill missing categorical values using most frequent value (mode)
 
 ### Story 2: Balance Dataset
 

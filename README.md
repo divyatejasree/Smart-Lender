@@ -53,6 +53,14 @@ The app expects these applicant fields:
 
 `Loan_Status` should contain `Y` for approved applicants and `N` for rejected applicants.
 
+## Preprocessing Behavior
+
+Before training, the dataset is preprocessed as follows:
+
+- Missing numeric values are replaced with the column mean
+- Missing categorical values are replaced with the most frequent value (mode)
+- Categorical columns are encoded using one-hot encoding so the model can train on numeric inputs
+
 ## Load the Dataset
 
 This project uses `pandas` to read the dataset and `matplotlib` with the `fivethirtyeight` style for consistent plots.
