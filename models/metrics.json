@@ -1,53 +1,71 @@
 {
-  "best_model": "Gradient Boosting Fallback",
+  "best_model": "XGBoost",
   "model_path": "C:\\Users\\dviya\\OneDrive\\Documents\\Smart Lender\\models\\smart_lender_model.joblib",
+  "pickle_model_path": "C:\\Users\\dviya\\OneDrive\\Documents\\Smart Lender\\models\\smart_lender_model.pkl",
   "dataset_path": "C:\\Users\\dviya\\OneDrive\\Documents\\Smart Lender\\data\\loan_prediction.csv",
+  "cross_validation_mean_accuracy": 0.7889,
+  "cross_validation_std_accuracy": 0.0176,
   "results": [
     {
       "model": "Decision Tree",
-      "training_accuracy": 0.8861,
-      "testing_accuracy": 0.7833
+      "cross_validation_mean_accuracy": 0.7511,
+      "cross_validation_std_accuracy": 0.0113,
+      "training_accuracy": 0.8417,
+      "testing_accuracy": 0.7389
     },
     {
       "model": "Random Forest",
-      "training_accuracy": 0.8903,
-      "testing_accuracy": 0.7833
+      "cross_validation_mean_accuracy": 0.7889,
+      "cross_validation_std_accuracy": 0.0196,
+      "training_accuracy": 0.8972,
+      "testing_accuracy": 0.7944
     },
     {
       "model": "KNN",
-      "training_accuracy": 0.8319,
-      "testing_accuracy": 0.8056
+      "cross_validation_mean_accuracy": 0.7422,
+      "cross_validation_std_accuracy": 0.0303,
+      "training_accuracy": 0.8306,
+      "testing_accuracy": 0.7889
     },
     {
-      "model": "Gradient Boosting Fallback",
-      "training_accuracy": 0.9056,
-      "testing_accuracy": 0.8056
+      "model": "XGBoost",
+      "cross_validation_mean_accuracy": 0.7889,
+      "cross_validation_std_accuracy": 0.0176,
+      "training_accuracy": 0.9236,
+      "testing_accuracy": 0.8278
+    },
+    {
+      "model": "Logistic Regression",
+      "cross_validation_mean_accuracy": 0.8033,
+      "cross_validation_std_accuracy": 0.0207,
+      "training_accuracy": 0.8153,
+      "testing_accuracy": 0.8167
     }
   ],
   "classification_report": {
     "Rejected": {
-      "precision": 0.85,
-      "recall": 0.5396825396825397,
-      "f1-score": 0.6601941747572816,
+      "precision": 0.82,
+      "recall": 0.6507936507936508,
+      "f1-score": 0.7256637168141593,
       "support": 63.0
     },
     "Approved": {
-      "precision": 0.7928571428571428,
-      "recall": 0.9487179487179487,
-      "f1-score": 0.8638132295719845,
+      "precision": 0.8307692307692308,
+      "recall": 0.9230769230769231,
+      "f1-score": 0.8744939271255061,
       "support": 117.0
     },
-    "accuracy": 0.8055555555555556,
+    "accuracy": 0.8277777777777777,
     "macro avg": {
-      "precision": 0.8214285714285714,
-      "recall": 0.7442002442002442,
-      "f1-score": 0.7620037021646331,
+      "precision": 0.8253846153846154,
+      "recall": 0.786935286935287,
+      "f1-score": 0.8000788219698327,
       "support": 180.0
     },
     "weighted avg": {
-      "precision": 0.8128571428571427,
-      "recall": 0.8055555555555556,
-      "f1-score": 0.7925465603868385,
+      "precision": 0.8270000000000001,
+      "recall": 0.8277777777777777,
+      "f1-score": 0.8224033535165347,
       "support": 180.0
     }
   }
