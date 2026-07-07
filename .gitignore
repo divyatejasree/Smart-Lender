@@ -4,3 +4,7 @@ __pycache__/
 venv/
 .env
 instance/
+models/*.joblib
+models/*.pkl
+models/*.pickle
+models/*.sav
