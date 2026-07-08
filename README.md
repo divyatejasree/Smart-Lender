@@ -140,3 +140,5 @@ The prediction page also displays the model confidence and selected model name.
 
 - [Tools and Technologies Used](docs/tools-and-technologies.md)
 - [Project Workflow](docs/project-workflow.md)
+## Demo Video
+- Google Drive Demo Video Link : https://drive.google.com/file/d/1-gJBbyw9pSvJXH_PuUIp3OIP6uws_7pY/view?usp=sharing
